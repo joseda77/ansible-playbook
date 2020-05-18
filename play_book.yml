@@ -1,0 +1,30 @@
+- hosts: 192.168.1.68                     # Nombre del host, puede ser un conjunto de hosts
+  become: true                            # Permite que las tareas se ejcuten como root
+  remote_user: root                       # Usuario del nodo con el que se conectará
+  tasks:                                  # Indica que se ejecutaran unas tareas
+    - name: update Ubuntu Servers         # Nombre de la tarea
+      apt: update_cache=yes upgrade=safe  # Es lo mismo que: apt update -y; apt upgrade -y
+
+    - name: install python utilities 
+      apt: name={{item}} state=present update_cache=yes #Es lo mismo que: apt install multiple software
+      loop: ['python3','python3-pip', 'virtualenv', 'python3-setuptools'] # Es el software a instalar
+
+    - name: Add Docker GPG apt Key
+      apt_key:                            # Indica que se agregaran llaves: apt-key add -
+        url: https://download.docker.com/linux/ubuntu/gpg   # Recurso con las llaves
+        state: present                    # Indica que tiene que estar presente en el nodo
+
+    - name: Add Docker Repository
+      apt_repository:                     # Indica que se agregaran repositorios: add-apt-repository ..
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+    - name: Install docker-ce and docker-compose
+      apt: name={{item}} state=latest update_cache=yes  #Es lo mismo que: apt install docker-ce docker-compose
+      loop: ['docker-ce', 'docker-compose']
+
+    - name: pull flask image
+      shell: docker pull joseda77/flask_example:0.1
+
+    - name: run flask image
+      shell: docker run -d --publish 5000:5000 joseda77/flask_example:0.1
